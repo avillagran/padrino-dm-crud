@@ -214,8 +214,12 @@ module VQ
                 end
 
                 def log data = nil
-                  logger.info params.inspect.red
-                  logger.info "Data: #{data.inspect}".bold.yellow unless data.blank?
+                  if data.class.eql? String
+                    logger.info data.bold
+                  else
+                    logger.info params.inspect.red
+                    logger.info "Data: #{data.inspect}".bold.yellow unless data.blank?
+                  end
                 end
                 def log_params; log; end
                 def lparams; log; end
