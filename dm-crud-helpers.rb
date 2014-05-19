@@ -89,6 +89,13 @@ module VQ
                         Ver
                       </a>
                     }
+                  else # Array
+                    str << %{
+                      <a href='#{i[1]}' data-disable-with="Cargando...">
+                        <span class="glyphicon glyphicon-#{i[0][0]}"></span>
+                        #{i[0][1]}
+                      </a>
+                    }
                   end
                 str.html_safe
               end
