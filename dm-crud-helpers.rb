@@ -12,7 +12,7 @@ module VQ
             # end
               def crud_bar options
                 str = %{
-                  <ul class='nav nav-tabs not-print'>
+                  <ul class='nav nav-tabs not-print hidden-print'>
                 }
                 options.each do |i|
                   str << "<li#{' class="active"' unless i[2].blank?}>"
@@ -243,6 +243,20 @@ module VQ
                         end
                     end
                 end
+                
+                # => EXAMPLE:
+                # users = dm_a User, {
+                                
+                #                 fields: [:id, :rut], 
+                #                 child: {
+                #                     position: {
+                #                         fields: [:id, :job_id, :user_id],
+                #                         subchild: {
+                #                             job: {fields: [:id, :nivel, :puntos]}
+                #                         }
+                #                     }
+                #                 }
+                #             }
 
                 def dm_a model, options = {}
                     options[:object_relation] = false if options[:object_relation].nil?
@@ -261,6 +275,9 @@ module VQ
                 end
                 def dm_a_data( collection, data, options, nivel = 1 )
                     collection_name = collection.model.to_s
+                    
+                    tmp_childs  = []
+                    tmp_parents = []
 
                     # 1er nivel
                     unless options[:child].blank?
