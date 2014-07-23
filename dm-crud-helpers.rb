@@ -151,7 +151,11 @@ module VQ
                     options[:id] = name if options[:id].blank?
 
                     if !options[:collection].blank? && options[:options].blank?
+                      if options[:collection].class == Array
+                        options[:options] = options.delete(:collection)
+                      else
                         options[:options] = options.delete(:collection).map{|x| [x.name, x.id]} if (options[:collection].first.class != Hash)
+                      end
                     end
 
                     as                = options.delete :as unless options[:as].blank?
