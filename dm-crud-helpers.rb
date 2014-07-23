@@ -147,6 +147,8 @@ module VQ
 
                     options[:as] = :select if !options[:options].blank?||!options[:collection].blank?
                     options[:as] = name if [:password, :email, :telephone].include?( name )
+                    
+                    options[:id] = name if options[:id].blank?
 
                     if !options[:collection].blank? && options[:options].blank?
                         options[:options] = options.delete(:collection).map{|x| [x.name, x.id]} if (options[:collection].first.class != Hash)
