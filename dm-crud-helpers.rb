@@ -12,7 +12,7 @@ module VQ
             # end
               def crud_bar options
                 str = %{
-                  <ul class='nav nav-tabs not-print'>
+                  <ul class='nav nav-tabs not-print hidden-print'>
                 }
                 options.each do |i|
                   str << "<li#{' class="active"' unless i[2].blank?}>"
@@ -89,6 +89,13 @@ module VQ
                         Ver
                       </a>
                     }
+                  else # Array
+                    str << %{
+                      <a href='#{i[1]}' data-disable-with="Cargando...">
+                        <span class="glyphicon glyphicon-#{i[0][0]}"></span>
+                        #{i[0][1]}
+                      </a>
+                    }
                   end
                 str.html_safe
               end
@@ -140,9 +147,15 @@ module VQ
 
                     options[:as] = :select if !options[:options].blank?||!options[:collection].blank?
                     options[:as] = name if [:password, :email, :telephone].include?( name )
+                    
+                    options[:id] = name if options[:id].blank?
 
                     if !options[:collection].blank? && options[:options].blank?
+                      if options[:collection].class == Array
+                        options[:options] = options.delete(:collection)
+                      else
                         options[:options] = options.delete(:collection).map{|x| [x.name, x.id]} if (options[:collection].first.class != Hash)
+                      end
                     end
 
                     as                = options.delete :as unless options[:as].blank?
@@ -223,8 +236,13 @@ module VQ
                 end
                 def log_params; log; end
                 def lparams; log; end
+<<<<<<< HEAD
                 
                                 def dm_to_a dm_collection, fields = []
+=======
+
+                def dm_to_a dm_collection, fields = []
+>>>>>>> cdbb466fb9014948b27573df48e86c654a5ae68b
                     dm_collection.map do |x|
                         if fields.blank?
                             x.attributes

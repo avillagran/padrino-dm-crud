@@ -1,5 +1,3 @@
-# require 'dm-crud/dm-crud-helpers'
-
 module VQ
     module DmCrud
         @base    = nil
@@ -9,7 +7,7 @@ module VQ
         @success = nil
         @error   = nil
         @except  = nil
-        
+
 
         def self.registered(app)
             logger.info "REGISTER"
@@ -41,7 +39,7 @@ module VQ
             opts = {}
             opts[:map] = @map unless @map.blank?
 
-            
+
 
             lambda {
 
@@ -49,7 +47,7 @@ module VQ
                     eval %(
                         @items = #{class_name}.all
                     ) unless model.nil?
-                    
+
                     render "#{request.route_obj.controller}/index"
                 end if @only.include?( :index ) && !@except.include?( :index )
 
@@ -70,24 +68,24 @@ module VQ
                     render "#{request.route_obj.controller}/show"
                 end if @only.include?( :show ) && !@except.include?( :show )
 
-                
+
 
                 @base.post :create, opts do
                     eval %(
                         @item = #{class_name}.new(params[:#{singular_name}])
-                        
+
                         # ok = true#before_create
                         # return ok unless ok === true
 
-                        if @item.valid? && @item.save  
+                        if @item.valid? && @item.save
                             flash[:notice] = t(:success)
-                            #successful_update              
+                            #successful_update
                         else
                             flash[:error] = t(:error)
                             #failed_update
                         end
                     ) unless model.nil?
-                    
+
                     redirect_to url(request.route_obj.controller.to_sym, :index)
                 end if @only.include?( :create ) && !@except.include?( :create )
 
@@ -104,11 +102,11 @@ module VQ
                         @item = #{class_name}.get params[:id]
 
                         # ok = true #before_update
-                        # return ok unless ok === true    
+                        # return ok unless ok === true
 
                         if @item.update(params[:#{singular_name}])
                             flash[:notice] = t(:success)
-                            #successful_update              
+                            #successful_update
                         else
                             flash[:error] = t(:error)
                             #failed_update
@@ -123,7 +121,7 @@ module VQ
                         @item = #{class_name}.get params[:id]
                         # ok = true#before_destroy
                         # return ok unless ok === true
-                        
+
                         if @item.destroy
                             flash[:notice] = t(:success_delete)
                         else
@@ -136,6 +134,6 @@ module VQ
         end
 
 
-    
+
     end
 end
