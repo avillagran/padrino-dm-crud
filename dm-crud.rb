@@ -1,4 +1,4 @@
-require 'dm-crud/dm-crud-helpers'
+# require 'dm-crud/dm-crud-helpers'
 
 module VQ
     module DmCrud
