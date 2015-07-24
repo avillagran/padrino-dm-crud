@@ -1,4 +1,4 @@
-require 'dm-crud/dm-crud-helpers'
+require_relative 'dm-crud-helpers'
 
 module VQ
     module DmCrud
@@ -111,6 +111,7 @@ module VQ
                             #successful_update              
                         else
                             flash[:error] = t(:error)
+                            logger.info ("[UPDATE::ERROR] "+@item.errors.inspect).red.bold
                             #failed_update
                         end
 

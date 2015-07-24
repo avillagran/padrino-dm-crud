@@ -146,10 +146,13 @@ module VQ
                     end
 
                     as                = options.delete :as unless options[:as].blank?
-
+                    
+                    options[:class] = options[:class].gsub('form-control', '') if [:checkbox, :boolean].include?(as)
+                    
                     label = options.delete :label
                     label = name if label.blank?
                     label = label.to_s.titleize
+                    
 
                     %{
                         <div class='form-group'>
@@ -201,7 +204,8 @@ module VQ
                 end
               
                 def action_is?(value)
-                    request.route_obj.action.downcase == value.downcase    
+                  value = value.to_s
+                  request.route_obj.action.to_s.downcase == value.downcase    
                 end
               
                 def current_action_is?(value)
@@ -219,6 +223,159 @@ module VQ
                 end
                 def log_params; log; end
                 def lparams; log; end
+                
+                                def dm_to_a dm_collection, fields = []
+                    dm_collection.map do |x|
+                        if fields.blank?
+                            x.attributes
+                        else
+                            tmp = {}
+                            fields.each{|v| tmp[v.to_sym] = x[v]}
+
+                            tmp
+                        end
+                    end
+                end
+                
+                # => EXAMPLE:
+                # users = dm_a User, {
+                                
+                #                 fields: [:id, :rut], 
+                #                 child: {
+                #                     position: {
+                #                         fields: [:id, :job_id, :user_id],
+                #                         subchild: {
+                #                             job: {fields: [:id, :nivel, :puntos]}
+                #                         }
+                #                     }
+                #                 }
+                #             }
+
+                def dm_a model, options = {}
+                    options[:object_relation] = false if options[:object_relation].nil?
+
+                    #model_opts   = options[:only].blank? ? {} : {fields: options[:only]}
+                    model_opts    = options.except!(:child).except(:parent).except(:object_relation)
+                    dm_collection = model.all model_opts
+
+                    #onlys = (tmp=options.delete(:only)).blank? ? [] : [tmp]
+                    data  = dm_to_a dm_collection, model_opts[:fields]
+
+                    dm_a_data dm_collection, data, options
+                    
+                    data
+                    #dm_a_data dm_collection, true, options
+                end
+                def dm_a_data( collection, data, options, nivel = 1 )
+                    collection_name = collection.model.to_s
+                    
+                    tmp_childs  = []
+                    tmp_parents = []
+
+                    # 1er nivel
+                    unless options[:child].blank?
+                        options[:child].each do |c1_name, c1_opts|
+                            if collection.respond_to? c1_name
+                                model_opts    = c1_opts.except(:child).except(:parent).except(:object_relation)
+
+                                tmp   = collection.__send__(c1_name).all model_opts
+
+                                tmp_a = dm_to_a(tmp, model_opts[:fields])
+
+                                objs = dm_a_get_data data, tmp_a, collection_name, c1_name, c1_opts, model_opts[:fields]
+
+                                unless c1_opts[:subchild].blank? 
+                                    c1_opts[:subchild].each do |c2_name, c2_opts|
+                                        if tmp.respond_to? c2_name
+                                            tmp2   = tmp.__send__(c2_name)
+                                            tmp2_a = tmp2.to_a
+
+                                            dm_a_get_data data, tmp_a, collection_name, c2_name, c2_opts, :child, tmp2_a
+                                        end
+                                    end
+                                end 
+                                
+
+                            end
+                        end
+                    end
+
+                    unless options[:parent].blank?
+                        options[:parent].each do |c1_name, c1_opts|
+
+                            if collection.respond_to? c1_name
+                                model_opts    = c1_opts.except(:child).except(:parent).except(:object_relation)
+                                
+                                tmp   = collection.__send__(c1_name).all model_opts
+                                tmp_a = dm_to_a(tmp, model_opts[:fields])
+
+                                objs = dm_a_get_data data, tmp_a, collection_name, c1_name, c1_opts, :parent
+
+                                unless c1_opts[:subparent].blank? 
+                                    c1_opts[:subparent].each do |c2_name, c2_opts|
+                                        if tmp.respond_to? c2_name
+                                            tmp2   = tmp.__send__(c2_name)
+                                            tmp2_a = tmp2.to_a
+
+                                            dm_a_get_data data, tmp_a, collection_name, c2_name, c2_opts, :parent, tmp2_a
+                                        end
+                                    end
+                                end 
+                                
+
+                            end
+                        end
+                    end
+                end
+
+                def dm_a_get_data data, collection, parent_name, name, options, kind = :child, extra = false
+                    
+                    tmp = []
+                    parent_name += "_" unless parent_name.blank?
+
+                    data.each_with_index do |item, k|
+
+                        if kind == :child
+                            if extra != false
+                                
+                                obj = collection.select{|x| x["#{parent_name.to_s.singularize.downcase}id".to_sym] == item[:id]}.first
+                                next if obj.blank?
+                                obj = extra.select{|x| x.id == obj["#{name.to_s.singularize.downcase}_id".to_sym]}.first
+
+                            else
+                                obj = collection.select{|x| x["#{parent_name.to_s.singularize.downcase}id".to_sym] == item[extra ? extra : :id]}.first
+                            
+                            end
+                        end
+                        if kind == :parent
+                            if extra != false
+                                
+                                obj = collection.select{|x| x[:id] == item["#{name.to_s.singularize.downcase}_id".to_sym]}.first
+                                next if obj.blank?
+                                obj = extra.select{|x| x.id == obj["#{name.to_s.singularize.downcase}_id".to_sym]}.first
+
+                            else
+                                obj = collection.select{|x| x[:id] == item["#{name.to_s.singularize.downcase}_id".to_sym]}.first
+                            
+                            end
+                        end
+                        
+                        
+                        
+
+                        unless obj.blank?
+                            tmp << obj
+                            
+                            if options[:object_relation]
+                                data[k][name.to_sym] = obj.as_json options
+                            else
+                                data[k] = item.merge Hash[obj.as_json(options).map{|k,v| ["#{name}_#{k}".to_sym,v]}]
+                            end
+                        end
+                    end
+
+                    tmp
+                end
         end
     end
 end
